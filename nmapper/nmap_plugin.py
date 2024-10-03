@@ -13,12 +13,6 @@ def on_pipeline_init(evt: events.PipelineInitEvent):
     evt.pipeline.add(PipelineWorkerScope.INFO_COLLECTION, "nmapper", lambda ctx: nmap_worker.handle_task(ctx), 30)
 
 def load(load_context: PluginInitContext):
-    if not os.path.exists(load_context.data_folder / "nmap"):
-        with load_context.open_resource("nmap") as src:
-            with open(load_context.data_folder / "nmap") as dest:
-                dest.write(src.read())
-                os.chmod(dest.name, 0o755)
-
     cfg = load_context.config
     plugin_di["ports"] = cfg.get("nmap", "ports")
     plugin_di["thread_size"] = cfg.getint("nmap", "threads")

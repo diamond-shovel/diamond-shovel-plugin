@@ -1,14 +1,13 @@
-import configparser
-import csv
 import pathlib
 import socket
+from multiprocessing.pool import ThreadPool
 
 import nmap
 from diamond_shovel.function.task import TaskContext
 from kink import inject
+
 from nmap_container import plugin_di
 
-from multiprocessing.pool import ThreadPool
 
 @inject(container=plugin_di)
 def execute_scan(target_hosts: list[str], ports: str, extra_flags: str, data_folder: pathlib.Path):
@@ -45,7 +44,7 @@ def execute_scan(target_hosts: list[str], ports: str, extra_flags: str, data_fol
 
 @inject(container=plugin_di)
 def handle_task(task: TaskContext, ports: str, thread_size: int, extra_flags: str):
-    target_hosts_full = task.target_hosts
+    target_hosts_full = task.target_hosts + task.target_domains
     hosts_chunks = [target_hosts_full[i::thread_size] for i in range(thread_size)]
     pool = ThreadPool(thread_size)
     results = pool.map(lambda x: execute_scan(x, ports, extra_flags), hosts_chunks)
