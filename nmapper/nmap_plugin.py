@@ -1,7 +1,6 @@
 import os.path
 
 import nmap
-from diamond_shovel.function.task import PipelineWorkerScope
 from diamond_shovel.plugins import PluginInitContext, events
 from nmap import PortScannerError
 
@@ -9,8 +8,8 @@ import nmap_worker
 from nmapper.nmap_container import plugin_di
 
 
-def on_pipeline_init(evt: events.PipelineInitEvent):
-    evt.pipeline.add(PipelineWorkerScope.INFO_COLLECTION, "nmapper", lambda ctx: nmap_worker.handle_task(ctx), 30)
+def on_pipeline_init(evt: events.WorkerPoolInitEvent):
+    evt.pool.register_worker(nmap_worker.handle_task)
 
 def load(load_context: PluginInitContext):
     cfg = load_context.config

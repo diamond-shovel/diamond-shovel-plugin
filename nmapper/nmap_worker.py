@@ -1,6 +1,6 @@
+import asyncio
 import pathlib
 import socket
-from multiprocessing.pool import ThreadPool
 
 import nmap
 from diamond_shovel.function.task import TaskContext
@@ -10,7 +10,7 @@ from nmap_container import plugin_di
 
 
 @inject(container=plugin_di)
-def execute_scan(target_hosts: list[str], ports: str, extra_flags: str, data_folder: pathlib.Path):
+async def execute_scan(target_hosts: list[str], ports: str, extra_flags: str, data_folder: pathlib.Path):
     nm = nmap.PortScanner(nmap_search_path=(
             "nmap",
             "/usr/bin/nmap",
@@ -43,11 +43,7 @@ def execute_scan(target_hosts: list[str], ports: str, extra_flags: str, data_fol
 
 
 @inject(container=plugin_di)
-def handle_task(task: TaskContext, ports: str, thread_size: int, extra_flags: str):
-    target_hosts_full = task.target_hosts + task.target_domains
+async def handle_task(task: TaskContext, ports: str, thread_size: int, extra_flags: str):
+    target_hosts_full = task["target_ips"] + task["target_domains"]
     hosts_chunks = [target_hosts_full[i::thread_size] for i in range(thread_size)]
-    pool = ThreadPool(thread_size)
-    results = pool.map(lambda x: execute_scan(x, ports, extra_flags), hosts_chunks)
-    pool.close()
-    pool.join()
-    task.nmap_result = results
+    task["nmap_results"] = asyncio.gather(*[execute_scan(chunk, ports, extra_flags, task["data_folder"]) for chunk in hosts_chunks])
